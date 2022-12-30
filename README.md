@@ -6,4 +6,4 @@ This basic site contains the status page for all my sites and projects. It has t
 
 I host this site using GitHub Pages, so the status page doesn't rely on the server itself.
 
-The Uptime Robot status page can be viewed separately at https://stats.uptimerobot.com/pol1Gh9Wx4 in the unlikely event that GitHub Pages is down.
+You can access this page at https://status.dport.me. In the unlikely event that GitHub Pages is down, or the even more unlikely event that DNS is busted, you can access the Uptime Robot status page separately at https://stats.uptimerobot.com/pol1Gh9Wx4.
