@@ -27,7 +27,7 @@ import { useEffect } from "react";
 
 type TimerInfo = {
   unitName: string;
-  ExecMainStartTimestamp: number;
+  ExecMainStartTimestamp: number | undefined;
   ExecMainExitTimestamp: number | undefined;
   ExecMainStatus: number;
 };
@@ -37,6 +37,10 @@ export const App = () => {
 
   const [timerInfo, updateTimerInfo] = React.useState<TimerInfo[]>([]);
   const [errorOccurred, updateErrorOccurred] = React.useState<boolean>(false);
+  const [nextUpdateUnixtime, updateNextUpdateUnixtime] = React.useState<number>(
+    Date.now() + 5000
+  );
+  const [ticker, updateTicker] = React.useState<number>(0);
 
   useEffect(() => {
     const updateTimerInfoWrapper = async () => {
@@ -76,7 +80,18 @@ export const App = () => {
 
     // Call it once on mount.
     updateTimerInfoWrapper();
-  }, [toast]);
+
+    // Set a timer to keep calling it.
+    setInterval(() => {
+      updateNextUpdateUnixtime(Date.now() + 5000);
+      updateTimerInfoWrapper();
+    }, 5000);
+
+    // Set another timer to cause the "seconds until" component to update every 200ms.
+    setInterval(() => {
+      updateTicker((ticker) => ticker + 1);
+    }, 200);
+  }, []);
 
   let timersComponent = <Text>Loading...</Text>;
   if (errorOccurred) {
@@ -87,59 +102,74 @@ export const App = () => {
       <SimpleGrid minChildWidth="320px" spacing={10} w="90vw">
         {timerInfo
           .sort((a, b) => a.unitName.localeCompare(b.unitName))
-          .map((timer) => (
-            <Card>
-              <CardHeader>
-                <Flex>
-                  <Heading size="md">
-                    {getUnitNamePretty(timer.unitName)}
-                  </Heading>
-                  <Spacer />
-                  <Tooltip label={`Exit code: ${timer.ExecMainStatus}`}>
-                    <Text>
-                      {timer.ExecMainExitTimestamp !== undefined
-                        ? timer.ExecMainStatus === 0
-                          ? "✅"
-                          : "❌"
-                        : "⏳"}
-                    </Text>
-                  </Tooltip>
-                </Flex>
-              </CardHeader>
-              <CardBody>
-                <Stack divider={<StackDivider />} spacing="4">
-                  <Box>
-                    <Heading size="xs" textTransform="uppercase">
-                      Last Run
+          .map((timer) => {
+            const headerText =
+              timer.ExecMainExitTimestamp !== undefined
+                ? timer.ExecMainStatus === 0
+                  ? "✅"
+                  : "❌"
+                : "⏳";
+            const startedText =
+              timer.ExecMainStartTimestamp !== undefined
+                ? getDatetimePretty(timer.ExecMainStartTimestamp)
+                : "Has not run yet...";
+            let endedText;
+            let durationText;
+            if (timer.ExecMainStartTimestamp === undefined) {
+              endedText = "N/A";
+              durationText = "N/A";
+            } else {
+              endedText =
+                timer.ExecMainExitTimestamp !== undefined
+                  ? getDatetimePretty(timer.ExecMainExitTimestamp)
+                  : "Running now...";
+              if (timer.ExecMainExitTimestamp !== undefined) {
+                durationText = getDurationPretty(
+                  timer.ExecMainExitTimestamp - timer.ExecMainStartTimestamp
+                );
+              } else {
+                durationText = `${getDurationPretty(
+                  Math.round(Date.now() / 1000 - timer.ExecMainStartTimestamp)
+                )} so far`;
+              }
+            }
+            return (
+              <Card key={timer.unitName}>
+                <CardHeader>
+                  <Flex>
+                    <Heading size="md">
+                      {getUnitNamePretty(timer.unitName).replace(
+                        "Ddclient",
+                        "ddclient"
+                      )}
                     </Heading>
-                    <Text pt="2" fontSize="sm">
-                      <strong>Started:</strong>{" "}
-                      {getDatetimePretty(timer.ExecMainStartTimestamp)}
-                    </Text>
-                    <Text pt="2" fontSize="sm">
-                      <strong>Ended:</strong>{" "}
-                      {timer.ExecMainExitTimestamp !== undefined
-                        ? getDatetimePretty(timer.ExecMainExitTimestamp)
-                        : "Running now..."}
-                    </Text>
-                    <Text pt="2" fontSize="sm">
-                      <strong>Duration:</strong>{" "}
-                      {timer.ExecMainExitTimestamp !== undefined
-                        ? getDurationPretty(
-                            timer.ExecMainExitTimestamp -
-                              timer.ExecMainStartTimestamp
-                          )
-                        : `${getDurationPretty(
-                            Math.round(
-                              Date.now() / 1000 - timer.ExecMainStartTimestamp
-                            )
-                          )} so far`}
-                    </Text>
-                  </Box>
-                </Stack>
-              </CardBody>
-            </Card>
-          ))}
+                    <Spacer />
+                    <Tooltip label={`Exit code: ${timer.ExecMainStatus}`}>
+                      <Text>{headerText}</Text>
+                    </Tooltip>
+                  </Flex>
+                </CardHeader>
+                <CardBody>
+                  <Stack divider={<StackDivider />} spacing="4">
+                    <Box>
+                      <Heading size="xs" textTransform="uppercase">
+                        Last Run
+                      </Heading>
+                      <Text pt="2" fontSize="sm">
+                        <strong>Started:</strong> {startedText}
+                      </Text>
+                      <Text pt="2" fontSize="sm">
+                        <strong>Ended:</strong> {endedText}
+                      </Text>
+                      <Text pt="2" fontSize="sm">
+                        <strong>Duration:</strong> {durationText}
+                      </Text>
+                    </Box>
+                  </Stack>
+                </CardBody>
+              </Card>
+            );
+          })}
       </SimpleGrid>
     );
   }
@@ -166,8 +196,10 @@ export const App = () => {
             </VStack>
           </Center>
           <Box padding={25}>
-            <Text fontSize="lg" textAlign="center">
-              All timestamps relative to {tz}.
+            <Text fontSize="lg" textAlign="center" key={ticker}>
+              All timestamps relative to {tz}. Next update in{" "}
+              {Math.floor((nextUpdateUnixtime - Date.now()) / 1000) + 1}{" "}
+              seconds.
             </Text>
           </Box>
           <Center>{timersComponent}</Center>
