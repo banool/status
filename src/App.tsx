@@ -98,7 +98,7 @@ export const App = () => {
                   <Tooltip label={`Exit code: ${timer.ExecMainStatus}`}>
                     <Text>
                       {timer.ExecMainExitTimestamp !== undefined
-                        ? timer.ExecMainStatus == 0
+                        ? timer.ExecMainStatus === 0
                           ? "✅"
                           : "❌"
                         : "⏳"}
@@ -221,10 +221,10 @@ function getDurationPretty(durationSecs: number) {
   var seconds: any = durationSecs - hours * 3600 - minutes * 60;
   var time = "";
 
-  if (hours != 0) {
+  if (hours !== 0) {
     time = hours + " hours ";
   }
-  if (minutes != 0 || time !== "") {
+  if (minutes !== 0 || time !== "") {
     minutes = minutes < 10 && time !== "" ? "0" + minutes : String(minutes);
     time += minutes + " minutes ";
   }

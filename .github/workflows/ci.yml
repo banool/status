@@ -12,9 +12,6 @@ jobs:
   build_web:
     runs-on: ubuntu-latest
     concurrency: ci-${{ github.ref }}
-    defaults:
-      run:
-        working-directory: ./frontend
     steps:
     - uses: actions/checkout@v3
 
@@ -31,7 +28,7 @@ jobs:
     # Upload the artifact.
     - uses: actions/upload-pages-artifact@v1
       with:
-        path: frontend/build
+        path: build
 
 
   # Deploy web using the artifact from the previous job.
